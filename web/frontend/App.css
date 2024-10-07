@@ -1,0 +1,541 @@
+:root {
+    --bg_primary: #0F0F0F;
+    --bg_secondary: #232D3F;
+    --color_button: #0094fa;
+    --color_light1: #EBE3D5;
+    --color_light2: #F3EEEA;
+    --color_white: #ffff;
+    --color_black: #000;
+    --color_red: #f00;
+    --color_coffee: #776B5D;
+    --color_graylight: #F0F0F0;
+    --color_graydark: #A9A9A9;
+}
+
+* {
+    padding: 0px;
+    margin: 0px;
+    box-sizing: border-box;
+}
+
+body {
+    width: 100%;
+    height: auto;
+}
+
+body main.Polaris-Frame__Main ._TitleBar_ukuv0_1 {
+    display: none !important;
+}
+
+.h1 {
+    font-size: 50px;
+}
+
+.h2 {
+    font-size: 40px;
+}
+
+.h3 {
+    font-size: 30px;
+}
+
+.h4 {
+    font-size: 25px;
+}
+
+.text-small {
+    font-size: 14px;
+}
+
+.text-medium {
+    font-size: 16px;
+}
+
+.text-large {
+    font-size: 18px;
+}
+
+.text-bold {
+    font-weight: 600;
+}
+
+a {
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    padding: 20px 0px 0px;
+    color: var(--color_black);
+}
+
+.Polaris-LegacyCard a {
+    /* display: unset; */
+    display: flex;
+    padding: 5px 0px 5px;
+    align-items: center;
+}
+
+/* .Polaris-Button {
+    margin-bottom: 20px !important;
+} */
+
+a>svg {
+    filter: drop-shadow(0px 0px 10px var(--color_graydark));
+}
+
+a.active {
+    color: var(--color_button);
+}
+
+.a,
+.button-primary {
+    background-color: var(--color_button);
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+}
+
+.text-light,
+.text-light>* {
+    color: var(--color_light1);
+}
+
+.text-light-2,
+.text-light-2>* {
+    color: var(--color_light2);
+}
+
+.text-dark,
+.text-dark>* {
+    color: var(--bg_primary);
+}
+
+.text-dark-2,
+.text-dark-2>* {
+    color: var(--bg_secondary);
+}
+
+.text-coffee,
+.text-coffee-2>* {
+    color: var(--color_coffee)
+}
+
+.bg-dark {
+    background-color: var(--bg_primary);
+}
+
+.bg-light {
+    background-color: var(--bg_secondary);
+}
+
+.main-section {
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0px;
+    height: 100vh;
+}
+
+.home-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.main-section .menu-section {
+    height: 100vh;
+    flex: 0 0 70px;
+    box-shadow: 0px 0px 10px var(--color_graydark);
+    background-color: var(--color_white);
+}
+
+.main-section .content-section {
+    flex: 1;
+    height: 100vh;
+    overflow-y: auto;
+    background-color: var(--color_graylight);
+}
+
+.menu-section .navmenu-section ul {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+
+
+.product-modal {
+    z-index: 110;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.product-modal .btn-close {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    padding: 12px 20px;
+    border-radius: 2px;
+    cursor: pointer;
+    background-color: #fff;
+}
+
+.product-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.modal-form form {
+    width: 100%;
+    max-width: 700px;
+    padding: 20px;
+    border-radius: 30px;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 50px auto;
+}
+
+form.singel-item-form {
+    padding: 0px 50px 50px;
+}
+
+.modal-form form .image-block {
+    flex: 1;
+}
+
+.modal-form form .image-block img {
+    width: 90%;
+    height: auto;
+    object-fit: cover;
+}
+
+.modal-form form .form-fields {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    flex-direction: column;
+}
+
+.modal-form form .form-fields input,
+.modal-form form .form-fields textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #7d7d7d;
+}
+
+.modal-form form .form-fields input[type='submit'] {
+    cursor: pointer;
+}
+
+.half-width-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    /* Adjust the gap between the inputs as needed */
+}
+
+.quantity-weight-cost-container {
+    display: flex;
+    gap: 20px;
+}
+
+.quantity-weight-cost-container .half-width-container {
+    width: 100%;
+}
+
+.half-width-item {
+    flex: 1;
+}
+
+input[type="number"] {
+    width: 100%;
+    /* Ensure the input fields take up full width of their container */
+}
+
+input[type="text"],
+input[type="submit"],
+.form-fields {
+    width: 100%;
+}
+
+.button {
+    padding: 15px 25px;
+    cursor: pointer;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    background-color: #008170;
+    color: #fff;
+    border: none;
+    font-size: 18px;
+    display: inline-flex;
+    gap: 10px;
+}
+
+/* PRODUCT PAGE STYLE END */
+
+.Polaris-Layout {
+    margin-top: 0 !important;
+    margin-left: 0 !important;
+    display: block !important;
+}
+
+.Polaris-Frame__Main {
+    max-width: 100% !important;
+}
+
+.selectedItems-product-collection {
+    display: flex;
+    gap: 25px;
+}
+
+.selectedItems-product-collection .half-width-container {
+    align-items: center;
+}
+
+.selected-box-type {
+    display: flex;
+    gap: 20px;
+    width: 100% !important;
+}
+
+.selected-box-type .half-width-container {
+    width: 50% !important;
+    display: unset !important;
+}
+
+.modal-form form .form-fields .name-fields,
+.modal-form form .form-fields .supplier-name-fields,
+.modal-form form .form-fields .contact-info-fields,
+.modal-form form .form-fields .lead-times-fields,
+.modal-form form .form-fields .quantity-fields {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    /* align-items: center; */
+    justify-content: center;
+    flex-direction: column;
+}
+
+p.error-text {
+    color: #cb0000;
+}
+
+.product-modal .modal-form .inside-dimensions-wrapper,
+.product-modal .modal-form .outside-dimensions-wrapper,
+.product-modal .modal-form .flat-dimensions-wrapper {
+    width: 100%;
+}
+
+.upload-image {
+    width: 100%;
+}
+
+.upload-image .Polaris-DropZone__Container {
+    position: relative;
+    flex: 1 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+}
+
+.currency-symbol {
+    margin-right: 0.5rem;
+    font-size: 1rem;
+}
+
+input[type="number"],
+input[type="text"] {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.form-fields {
+    display: flex;
+}
+
+.file-upload-section {
+    width: 35%;
+}
+
+/* min-width: unset; */
+.TextField__Prefix {
+    margin-right: 0.5rem;
+}
+
+.Polaris-TextField__Backdrop {
+    background-color: var(--p-color-input-bg-surface);
+    border: 0 !important;
+    border-top-color: #898f94;
+    border-radius: 0 !important;
+    pointer-events: none;
+    outline: none !important;
+}
+
+
+.Polaris-IndexTable__TableRow.Polaris-IndexTable__TableRow--unclickable {
+    height: 60px !important;
+}
+
+td.Polaris-IndexTable__TableCell {
+    border: 1px solid #dddddd;
+}
+
+.Polaris-IndexTable__TableHeading {
+    border: 1px solid #42b2ff !important;
+    background: #99d6ff !important;
+}
+
+.warehouse-location-container {
+    width: 100%;
+}
+
+.Polaris-Layout__Section,
+.Polaris-Layout__AnnotatedSection {
+    width: 100 !important;
+    margin: 0 !important;
+}
+
+.datepicker_inputeselcter {
+    display: flex;
+    color: #a7a7a7;
+    align-items: center;
+}
+
+.Polaris-Layout__Section {
+    max-width: 100% !important;
+}
+
+.dateRange-Picker-button {
+    margin: 20px 0px;
+}
+
+.use-box-data-grid {
+    margin: 20px 0px 0px;
+}
+
+.Polaris-Page.Polaris-Page--fullWidth {
+    padding-bottom: 24px;
+}
+
+.box-condition-section,
+.box-condition-label {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.box-condition-label {
+    justify-content: space-around;
+}
+
+.box-condition-section div.Polaris-ShadowBevel {
+    width: 95% !important
+}
+
+.box-condition-selector {
+    width: 30%;
+}
+
+.box-condition-label .Polaris-Label {
+    width: 32%;
+}
+
+.Polaris-TextField--slim.Polaris-TextField--borderless.Polaris-TextField--slim.Polaris-TextField--borderless .Polaris-TextField__Input {
+    /* background-color: #e5e5e5; */
+    padding: 0px 10px;
+    border: 1px solid black;
+}
+
+
+.box-condition-section .Polaris-Select {
+    width: 30%;
+}
+
+
+.Polaris-IndexFilters>div:last-child>div {
+    display: flex;
+}
+
+.Polaris-Filters__Container {
+    width: 84%;
+}
+
+.Polaris-Filters__FiltersWrapper,
+.Polaris-Filters__FiltersWrapper.Polaris-Filters__FiltersWrapperWithAddButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.low-stock-toggle {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.low-stock-toggle span.Polaris-Text--root.Polaris-Text--bodyMd {
+    font-weight: 600;
+    font-size: 20px;
+}
+
+.low-stock-toggle .low-stock-toggle-btn svg {
+    height: 3.25rem;
+    width: 3.25rem;
+}
+
+.Polaris-DropZone__Container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.Polaris-Pagination {
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.conditions_form_container {
+    margin-bottom: 25px;
+}
+
+.Polaris-ResourceItem:active {
+    background-color: rgb(255 255 255) !important;
+    border-radius: 18px;
+}
+
+.ResourceItem-section .Polaris-ResourceItem__ListItem {
+    border: solid #ababab 0.05px !important;
+    border-radius: 10px;
+}
+
+.ResourceItem-section .Polaris-ResourceList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
