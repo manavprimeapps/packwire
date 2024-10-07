@@ -486,64 +486,75 @@ app.post('/webhook/orders/create', async (req, res) => {
 
       const boxName = await getBoxNameByProductId(productId);
 
-      if (boxNamesCache.has(boxName)) {
-        const boxes = await Boxcollection.find({
-          _id: boxName, // Convert product_id to string for comparison
-          shop_name: shop_name,
-        });
-        const box = boxes?.[0];
-        console.log(box);
-        console.log('product name:', item.title);
-
-        await historyLogSave(
-          box._id,
-          orderData.id,
-          orderData.name,
-          box.boxName,
-          item.name,
-          item.quantity,
-          shopDomain,
-          accessToken,
-          'created'
-        );
-
-        //  Save the box name as a metafield on the order
-        await saveOrderMetafield(orderData.id, box.boxName, shopDomain, accessToken);
-      } else {
-        boxNamesCache.add(boxName); // Add the boxName to the set to avoid duplicates
+      if (!boxNamesCache.has(boxName)) {
         // Fetch box data where the product ID matches selectedItems.productSelection
         const boxes = await Boxcollection.find({
           'selectedItems.productSelection.id': String(item.product_id), // Convert product_id to string for comparison
           shop_name: shop_name,
         });
-
+        console.log(boxes);
         // Update and save each matching box
-        for (const box of boxes) {
-          // @ts-ignore
-          const newQuantity = Math.max(box.quantity - item.quantity, 0);
-          // @ts-ignore
-          if (box.quantity !== newQuantity) {
-            // @ts-ignore
-            box.quantity = newQuantity;
-            await box.save();
-            console.log(`Updated Box Quantity for Product ID ${box.boxName}: ${box.quantity}`);
-            await checkAndSendLowStockAlert(box, shopDomain);
-            await historyLogSave(
-              box._id,
-              orderData.id,
-              orderData.name,
-              box.boxName,
-              item.name,
-              item.quantity,
-              shopDomain,
-              accessToken,
-              'created'
-            );
-            //  Save the box name as a metafield on the order
-            await saveOrderMetafield(orderData.id, box.boxName, shopDomain, accessToken);
-          }
-        }
+        // for (const box of boxes) {
+        //   // @ts-ignore
+        //   const newQuantity = Math.max(box.quantity - item.quantity, 0);
+        //   // @ts-ignore
+        //   if (box.quantity !== newQuantity) {
+        //     // @ts-ignore
+        //     box.quantity = newQuantity;
+        //     await box.save();
+        //     console.log(`Updated Box Quantity for Product ID ${box.boxName}: ${box.quantity}`);
+        //     await checkAndSendLowStockAlert(box, shopDomain);
+        //     await historyLogSave(
+        //       box._id,
+        //       orderData.id,
+        //       orderData.name,
+        //       box.boxName,
+        //       item.name,
+        //       item.quantity,
+        //       shopDomain,
+        //       accessToken,
+        //       'created'
+        //     );
+        //     //  Save the box name as a metafield on the order
+        //     await saveOrderMetafield(orderData.id, box.boxName, shopDomain, accessToken);
+        //   }
+        // }
+      } else {
+        boxNamesCache.add(boxName); // Add the boxName to the set to avoid duplicates
       }
+
+      // Fetch box data where the product ID matches selectedItems.productSelection
+      // const boxes = await Boxcollection.find({
+      //   'selectedItems.productSelection.id': String(item.product_id), // Convert product_id to string for comparison
+      //   shop_name: shop_name,
+      // });
+      // console.log(boxes);
+      // Update and save each matching box
+      // for (const box of boxes) {
+      //   // @ts-ignore
+      //   const newQuantity = Math.max(box.quantity - item.quantity, 0);
+      //   // @ts-ignore
+      //   if (box.quantity !== newQuantity) {
+      //     // @ts-ignore
+      //     box.quantity = newQuantity;
+      //     await box.save();
+      //     console.log(`Updated Box Quantity for Product ID ${box.boxName}: ${box.quantity}`);
+      //     await checkAndSendLowStockAlert(box, shopDomain);
+      //     await historyLogSave(
+      //       box._id,
+      //       orderData.id,
+      //       orderData.name,
+      //       box.boxName,
+      //       item.name,
+      //       item.quantity,
+      //       shopDomain,
+      //       accessToken,
+      //       'created'
+      //     );
+      //     //  Save the box name as a metafield on the order
+      //     await saveOrderMetafield(orderData.id, box.boxName, shopDomain, accessToken);
+      //   }
+      // }
     }
     return res.status(200).send('Order processed successfully');
   } catch (error) {
