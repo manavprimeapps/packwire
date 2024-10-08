@@ -24,7 +24,6 @@ export default function PageName() {
   const { t } = useTranslation();
   const fetch = useAuthenticatedFetch();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [loading, setloading] = useState(true);
   const [boxcollectionsData, setboxcollectionsdata] = useState([]);
   const [Storelocations, setStorelocations] = useState([]);

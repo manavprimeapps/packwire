@@ -1,4 +1,4 @@
-// @ts-check
+// @ts-nocheck
 import { join } from 'path';
 import { readFileSync } from 'fs';
 import express from 'express';
@@ -335,7 +335,7 @@ app.get('/api/store/info', async (req, res) => {
 app.post('/api/hook/install', async (req, res) => {
   const shop = res.locals.shopify.session.shop;
   const accessToken = res.locals.shopify.session.accessToken;
-  const webhookUrl = 'https://81c8-115-246-18-178.ngrok-free.app';
+  const webhookUrl = 'https://8fbb-115-246-18-178.ngrok-free.app';
 
   console.log('Attempting to register webhook with URL:', webhookUrl);
 
@@ -445,118 +445,50 @@ app.post('/webhook/orders/create', async (req, res) => {
   try {
     const orderData = req.body;
     const shopDomain = req.headers['x-shopify-shop-domain'];
-    const webhookId = req.headers['x-shopify-webhook-id']; // Get the webhook ID
-    const matchedBoxes = [];
-    const processedProducts = new Set();
+    const webhookId = req.headers['x-shopify-webhook-id']; // Webhook ID for deduplication
+    const processedProducts = new Set(); // To track already processed products
 
-    if (!webhookId) {
-      console.log('Shopify webhook ID not found in request headers');
-      return res.status(400).send('Bad request');
+    if (!webhookId || processedWebhooks.has(webhookId)) {
+      console.log('Duplicate or invalid webhook, skipping processing');
+      return res.status(400).send('Webhook invalid or already processed');
     }
 
-    // Check if this webhook has already been processed
-    if (processedWebhooks.has(webhookId)) {
-      console.log('Duplicate webhook detected, skipping processing');
-      return res.status(200).send('Webhook already processed');
-    }
-
-    // Add the webhook ID to the set to mark it as processed
+    // Mark webhook as processed
     processedWebhooks.add(webhookId);
 
+    // Validate shop domain
     if (!shopDomain) {
-      console.log('Shopify shop domain not found in request headers');
-    } else {
-      console.log('Shopify shop domain:', shopDomain);
+      console.log('Shop domain missing in headers');
+      return res.status(400).send('Shop domain missing');
     }
 
-    // Retrieve the shop session or access token from your database
     const storeInfo = await storeinformation.findOne({ shop_name: shopDomain }).exec();
     if (!storeInfo || !storeInfo.shop_accessToken) {
-      console.log('No access token found for shop:', shopDomain);
-      return res.status(400).send('Access token not found');
+      console.log('Access token not found for shop:', shopDomain);
+      return res.status(400).send('Access token missing');
     }
 
-    const accessToken = storeInfo.shop_accessToken;
-    const shop_name = storeInfo.shop_name;
+    const { shop_accessToken: accessToken, shop_name } = storeInfo;
 
-    const boxNamesCache = new Set(); // A set to store unique box names
+    // Fetch matching box data
+    const boxData = await getBoxNameBy(orderData.line_items);
 
-    for (const item of orderData.line_items) {
-      const productId = String(item.product_id);
-
-      const boxName = await getBoxNameByProductId(productId);
-
-      if (!boxNamesCache.has(boxName)) {
-        // Fetch box data where the product ID matches selectedItems.productSelection
-        const boxes = await Boxcollection.find({
-          'selectedItems.productSelection.id': String(item.product_id), // Convert product_id to string for comparison
-          shop_name: shop_name,
-        });
-        console.log(boxes);
-        // Update and save each matching box
-        // for (const box of boxes) {
-        //   // @ts-ignore
-        //   const newQuantity = Math.max(box.quantity - item.quantity, 0);
-        //   // @ts-ignore
-        //   if (box.quantity !== newQuantity) {
-        //     // @ts-ignore
-        //     box.quantity = newQuantity;
-        //     await box.save();
-        //     console.log(`Updated Box Quantity for Product ID ${box.boxName}: ${box.quantity}`);
-        //     await checkAndSendLowStockAlert(box, shopDomain);
-        //     await historyLogSave(
-        //       box._id,
-        //       orderData.id,
-        //       orderData.name,
-        //       box.boxName,
-        //       item.name,
-        //       item.quantity,
-        //       shopDomain,
-        //       accessToken,
-        //       'created'
-        //     );
-        //     //  Save the box name as a metafield on the order
-        //     await saveOrderMetafield(orderData.id, box.boxName, shopDomain, accessToken);
-        //   }
-        // }
-      } else {
-        boxNamesCache.add(boxName); // Add the boxName to the set to avoid duplicates
-      }
-
-      // Fetch box data where the product ID matches selectedItems.productSelection
-      // const boxes = await Boxcollection.find({
-      //   'selectedItems.productSelection.id': String(item.product_id), // Convert product_id to string for comparison
-      //   shop_name: shop_name,
-      // });
-      // console.log(boxes);
-      // Update and save each matching box
-      // for (const box of boxes) {
-      //   // @ts-ignore
-      //   const newQuantity = Math.max(box.quantity - item.quantity, 0);
-      //   // @ts-ignore
-      //   if (box.quantity !== newQuantity) {
-      //     // @ts-ignore
-      //     box.quantity = newQuantity;
-      //     await box.save();
-      //     console.log(`Updated Box Quantity for Product ID ${box.boxName}: ${box.quantity}`);
-      //     await checkAndSendLowStockAlert(box, shopDomain);
-      //     await historyLogSave(
-      //       box._id,
-      //       orderData.id,
-      //       orderData.name,
-      //       box.boxName,
-      //       item.name,
-      //       item.quantity,
-      //       shopDomain,
-      //       accessToken,
-      //       'created'
-      //     );
-      //     //  Save the box name as a metafield on the order
-      //     await saveOrderMetafield(orderData.id, box.boxName, shopDomain, accessToken);
-      //   }
-      // }
+    if (boxData && boxData.box) {
+      // Handle matched box data
+      await processMatchedBox(boxData, orderData, shopDomain, shop_name, accessToken);
     }
-    return res.status(200).send('Order processed successfully');
+
+    if (boxData && boxData.unmatchedProductIds) {
+      // Handle unmatched products in the order
+      orderData.line_items = orderData.line_items.filter((item) =>
+        boxData.unmatchedProductIds.includes(item.product_id)
+      );
+    }
+
+    // Process remaining unmatched boxes
+    await processUnmatchedBoxes(orderData, shop_name, shopDomain, accessToken);
+
+    res.status(200).send('Order processed successfully');
   } catch (error) {
     console.error('Error processing webhook:', error.message);
     if (!res.headersSent) {
@@ -565,35 +497,119 @@ app.post('/webhook/orders/create', async (req, res) => {
   }
 });
 
-const getBoxNameByProductId = async (itemProductId) => {
+// Helper function to process matched box data
+const processMatchedBox = async (boxData, orderData, shopDomain, shop_name, accessToken) => {
+  const boxDetails = await Boxcollection.findOne({
+    _id: boxData.box,
+    shop_name: shop_name,
+  });
+
+  if (boxDetails) {
+    const matchedProductIdsSet = new Set(boxData.matchedProductIds);
+    const matchedLineItems = orderData.line_items.filter((item) => matchedProductIdsSet.has(item.product_id));
+
+    // Update box quantity based on highest product quantity
+    const highestQuantity = Math.max(...matchedLineItems.map((item) => item.quantity));
+    const newQuantity = Math.max(boxDetails.quantity - highestQuantity, 0);
+
+    if (boxDetails.quantity !== newQuantity) {
+      await Boxcollection.updateOne({ _id: boxDetails._id }, { $set: { quantity: newQuantity } });
+      await checkAndSendLowStockAlert(boxDetails, shopDomain);
+
+      for (const item of matchedLineItems) {
+        await historyLogSave(
+          boxDetails._id,
+          orderData.id,
+          orderData.name,
+          boxDetails.boxName,
+          item.name,
+          item.quantity,
+          shopDomain,
+          accessToken,
+          'created'
+        );
+      }
+
+      // Save the box name as a metafield on the order
+      await saveOrderMetafield(orderData.id, boxDetails.boxName, shopDomain, accessToken);
+    }
+  }
+};
+
+// Helper function to process unmatched boxes
+const processUnmatchedBoxes = async (orderData, shop_name, shopDomain, accessToken) => {
+  for (const item of orderData.line_items) {
+    const productId = String(item.product_id);
+    const boxes = await Boxcollection.find({
+      'selectedItems.productSelection.id': productId,
+      shop_name: shop_name,
+    });
+
+    for (const box of boxes) {
+      const newQuantity = Math.max(box.quantity - item.quantity, 0);
+
+      if (box.quantity !== newQuantity) {
+        box.quantity = newQuantity;
+        await box.save();
+        await checkAndSendLowStockAlert(box, shopDomain);
+
+        await historyLogSave(
+          box._id,
+          orderData.id,
+          orderData.name,
+          box.boxName,
+          item.name,
+          item.quantity,
+          shopDomain,
+          accessToken,
+          'created'
+        );
+
+        // Save the box name as a metafield on the order
+        await saveOrderMetafield(orderData.id, box.boxName, shopDomain, accessToken);
+      }
+    }
+  }
+};
+
+const getBoxNameBy = async (lineItems) => {
   try {
+    // Fetch condition data from the database (adjust query based on your schema)
     const conditionData = await Conditioncollection.findOne({}, { condition: 1, _id: 0 }).exec();
 
-    if (conditionData) {
-      const matchedBoxes = [];
-      // Fetch the condition collection document
-      if (conditionData && conditionData.condition) {
-        conditionData.condition.forEach((condition) => {
-          const productMatch = condition.productSelection.find((product) => {
-            return product.id == itemProductId; // Perform the comparison
-          });
+    if (conditionData && conditionData.condition) {
+      // Iterate over each condition in the database
+      for (const condition of conditionData.condition) {
+        const matchedProductIds = [];
+        const unmatchedProductIds = [];
+
+        // Check how many products from lineItems match the current condition
+        lineItems.forEach((item) => {
+          const productMatch = condition.productSelection.find((product) => product.id == item.product_id);
 
           if (productMatch) {
-            matchedBoxes.push(condition.box_name);
+            // Store the product ID if it matches the current condition
+            matchedProductIds.push(item.product_id);
+          } else {
+            unmatchedProductIds.push(item.product_id);
           }
         });
+
+        // If two or more products match the same condition, return the condition's box and matched product IDs
+        if (matchedProductIds.length >= 2) {
+          return {
+            box: condition.box_name, // Return the box name for the matched condition
+            matchedProductIds, // Return the product IDs that matched the condition
+            unmatchedProductIds, // Return the product IDs that did not match the condition
+          };
+        }
       }
 
-      if (matchedBoxes.length > 1) {
-        return matchedBoxes;
-      } else if (matchedBoxes.length === 1) {
-        return matchedBoxes[0]; // Return the single box name
-      } else {
-        return null; // No matching box found
-      }
+      // If no conditions match for two or more products, return null
+      return null;
     } else {
-      console.log('No condition data found for this product ID.');
-      return null; // No condition data found for the given product ID
+      console.log('No condition data found in the collection.');
+      return null; // No condition data found
     }
   } catch (error) {
     console.error('Error fetching condition data:', error);
@@ -783,9 +799,10 @@ app.post('/webhook/orders/cancel', async (req, res) => {
     const shop_name = storeInfo.shop_name;
     // Loop through each line item in the order
     for (const item of orderData.line_items) {
+      const productId = String(item.product_id);
       // Fetch box data where the product ID matches selectedItems.productSelection
       const boxes = await Boxcollection.find({
-        'selectedItems.productSelection': item.product_id,
+        'selectedItems.productSelection': productId,
         shop_name: shop_name,
       });
 

@@ -3,7 +3,7 @@
 client_id = "35faf33b0b91fb00775c053a1b4d1863"
 name = "packwire"
 handle = "packwire"
-application_url = "https://angry-divisions-medical-llc.trycloudflare.com"
+application_url = "https://innocent-florists-mandate-handbook.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_orders,write_orders,write_products"
 
 [auth]
 redirect_urls = [
-  "https://angry-divisions-medical-llc.trycloudflare.com/auth/callback",
-  "https://angry-divisions-medical-llc.trycloudflare.com/auth/shopify/callback",
-  "https://angry-divisions-medical-llc.trycloudflare.com/api/auth/callback"
+  "https://innocent-florists-mandate-handbook.trycloudflare.com/auth/callback",
+  "https://innocent-florists-mandate-handbook.trycloudflare.com/auth/shopify/callback",
+  "https://innocent-florists-mandate-handbook.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

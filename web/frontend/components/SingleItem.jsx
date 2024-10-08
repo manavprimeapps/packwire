@@ -260,12 +260,14 @@ export function SingleItem({ isModalOpen, formData, setFormData, reload, Formhea
                       setFormData={setFormData}
                       pickerType="productSelection"
                       resourceType="Product"
+                      title={true}
                     />
                     <ProductSelecter
                       formData={formData}
                       setFormData={setFormData}
                       pickerType="collectionSelection"
                       resourceType="Collection"
+                      title={true}
                     />
                   </div>
                 </LegacyCard.Section>
