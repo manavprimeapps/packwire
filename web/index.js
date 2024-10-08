@@ -764,85 +764,208 @@ async function checkAndSendLowStockAlert(box, shopDomain) {
 /**
  * App Webhook for orders-cancel
  */
+// app.post('/webhook/orders/cancel', async (req, res) => {
+//   try {
+//     const orderData = req.body;
+//     const shopDomain = req.headers['x-shopify-shop-domain'];
+//     const webhookId = req.headers['x-shopify-webhook-id']; // Get the webhook ID
+
+//     if (!webhookId) {
+//       console.log('Shopify webhook ID not found in request headers');
+//       return res.status(400).send('Bad request');
+//     }
+
+//     // Check if this webhook has already been processed
+//     if (processedWebhooks.has(webhookId)) {
+//       console.log('Duplicate webhook detected, skipping processing');
+//       return res.status(200).send('Webhook already processed');
+//     }
+//     // Add the webhook ID to the set to mark it as processed
+//     processedWebhooks.add(webhookId);
+
+//     if (!shopDomain) {
+//       console.log('Shopify shop domain not found in request headers');
+//     } else {
+//       console.log('Shopify shop domain:', shopDomain);
+//     }
+
+//     // Retrieve the shop session or access token from your database
+//     const storeInfo = await storeinformation.findOne({ shop_name: shopDomain }).exec();
+//     if (!storeInfo || !storeInfo.shop_accessToken) {
+//       console.log('No access token found for shop:', shopDomain);
+//       return res.status(400).send('Access token not found');
+//     }
+//     const accessToken = storeInfo.shop_accessToken;
+//     const shop_name = storeInfo.shop_name;
+
+//     // Loop through each line item in the order
+//     for (const item of orderData.line_items) {
+//       const productId = String(item.product_id);
+//       // Fetch box data where the product ID matches selectedItems.productSelection
+//       const boxes = await Boxcollection.find({
+//         'selectedItems.productSelection.id': productId,
+//         shop_name: shop_name,
+//       });
+
+//       // Update and save each matching box
+//       // for (const box of boxes) {
+//       //   // @ts-ignore
+//       //   const newQuantity = Math.max(box.quantity + item.quantity, 0);
+//       //   // @ts-ignore
+//       //   if (box.quantity !== newQuantity) {
+//       //     // @ts-ignore
+//       //     box.quantity = newQuantity;
+//       //     await box.save();
+
+//       //     await historyLogSave(
+//       //       box._id,
+//       //       orderData.id,
+//       //       orderData.name,
+//       //       box.boxName,
+//       //       item.name,
+//       //       item.quantity,
+//       //       shopDomain,
+//       //       accessToken,
+//       //       'cancel'
+//       //     );
+//       //     console.log(`Updated Box Quantity for Product ID ${item.product_id}: ${box.quantity}`);
+//       //     const LowStock = 30;
+//       //     if (box.quantity < LowStock) {
+//       //       console.log(`Box Quantity Low Stock : ${box.boxName}`);
+//       //     }
+//       //   }
+//       // }
+//     }
+//     return res.status(200).send('Order processed successfully');
+//   } catch (error) {
+//     console.error('Error processing webhook:', error.message);
+//     if (!res.headersSent) {
+//       return res.status(500).send('Error processing webhook');
+//     }
+//   }
+// });
 app.post('/webhook/orders/cancel', async (req, res) => {
-  try {
+  try { 
     const orderData = req.body;
     const shopDomain = req.headers['x-shopify-shop-domain'];
-    const webhookId = req.headers['x-shopify-webhook-id']; // Get the webhook ID
+    const webhookId = req.headers['x-shopify-webhook-id'];
+    const processedProducts = new Set(); // Track already processed products
 
-    if (!webhookId) {
-      console.log('Shopify webhook ID not found in request headers');
-      return res.status(400).send('Bad request');
+    if (!webhookId || processedWebhooks.has(webhookId)) {
+      console.log('Duplicate or invalid webhook, skipping processing');
+      return res.status(400).send('Webhook invalid or already processed');
     }
 
-    // Check if this webhook has already been processed
-    if (processedWebhooks.has(webhookId)) {
-      console.log('Duplicate webhook detected, skipping processing');
-      return res.status(200).send('Webhook already processed');
-    }
-    // Add the webhook ID to the set to mark it as processed
+    // Mark webhook as processed
     processedWebhooks.add(webhookId);
 
+    // Validate shop domain
     if (!shopDomain) {
-      console.log('Shopify shop domain not found in request headers');
-    } else {
-      console.log('Shopify shop domain:', shopDomain);
+      console.log('Shop domain missing in headers');
+      return res.status(400).send('Shop domain missing');
     }
 
-    // Retrieve the shop session or access token from your database
     const storeInfo = await storeinformation.findOne({ shop_name: shopDomain }).exec();
     if (!storeInfo || !storeInfo.shop_accessToken) {
-      console.log('No access token found for shop:', shopDomain);
-      return res.status(400).send('Access token not found');
+      console.log('Access token not found for shop:', shopDomain);
+      return res.status(400).send('Access token missing');
     }
-    const accessToken = storeInfo.shop_accessToken;
-    const shop_name = storeInfo.shop_name;
-    // Loop through each line item in the order
-    for (const item of orderData.line_items) {
-      const productId = String(item.product_id);
-      // Fetch box data where the product ID matches selectedItems.productSelection
-      const boxes = await Boxcollection.find({
-        'selectedItems.productSelection': productId,
-        shop_name: shop_name,
-      });
 
-      // Update and save each matching box
-      for (const box of boxes) {
-        // @ts-ignore
-        const newQuantity = Math.max(box.quantity + item.quantity, 0);
-        // @ts-ignore
-        if (box.quantity !== newQuantity) {
-          // @ts-ignore
-          box.quantity = newQuantity;
-          await box.save();
+    const { shop_accessToken: accessToken, shop_name } = storeInfo;
 
-          await historyLogSave(
-            box._id,
-            orderData.id,
-            orderData.name,
-            box.boxName,
-            item.name,
-            item.quantity,
-            shopDomain,
-            accessToken,
-            'cancel'
-          );
-          console.log(`Updated Box Quantity for Product ID ${item.product_id}: ${box.quantity}`);
-          const LowStock = 30;
-          if (box.quantity < LowStock) {
-            console.log(`Box Quantity Low Stock : ${box.boxName}`);
-          }
-        }
-      }
+    // Fetch matching box data
+    const boxData = await getBoxNameBy(orderData.line_items);
+
+    if (boxData && boxData.box) {
+      // Process matched box data
+      await processCancelledMatchedBox(boxData, orderData, shopDomain, shop_name, accessToken);
     }
-    return res.status(200).send('Order processed successfully');
+
+    if (boxData && boxData.unmatchedProductIds) {
+      // Handle unmatched products in the order
+      orderData.line_items = orderData.line_items.filter((item) =>
+        boxData.unmatchedProductIds.includes(item.product_id)
+      );
+    }
+
+    // Process unmatched boxes
+    await processCancelledUnmatchedBoxes(orderData, shop_name, shopDomain, accessToken);
+
+    res.status(200).send('Order cancelled and processed successfully');
   } catch (error) {
-    console.error('Error processing webhook:', error.message);
+    console.error('Error processing cancellation webhook:', error.message);
     if (!res.headersSent) {
       return res.status(500).send('Error processing webhook');
     }
   }
 });
+
+// Helper function to process cancelled matched box data
+const processCancelledMatchedBox = async (boxData, orderData, shopDomain, shop_name, accessToken) => {
+  const boxDetails = await Boxcollection.findOne({
+    _id: boxData.box,
+    shop_name: shop_name,
+  });
+
+  if (boxDetails) {
+    const matchedProductIdsSet = new Set(boxData.matchedProductIds);
+    const matchedLineItems = orderData.line_items.filter((item) => matchedProductIdsSet.has(item.product_id));
+
+    // Increase box quantity based on highest product quantity
+    const highestQuantity = Math.max(...matchedLineItems.map((item) => item.quantity));
+    const newQuantity = boxDetails.quantity + highestQuantity; // Adding the quantity back
+
+    if (boxDetails.quantity !== newQuantity) {
+      await Boxcollection.updateOne({ _id: boxDetails._id }, { $set: { quantity: newQuantity } });
+
+      for (const item of matchedLineItems) {
+        await historyLogSave(
+          boxDetails._id,
+          orderData.id,
+          orderData.name,
+          boxDetails.boxName,
+          item.name,
+          item.quantity,
+          shopDomain,
+          accessToken,
+          'cancelled' // Log as 'cancelled'
+        );
+      }
+    }
+  }
+};
+
+// Helper function to process cancelled unmatched boxes
+const processCancelledUnmatchedBoxes = async (orderData, shop_name, shopDomain, accessToken) => {
+  for (const item of orderData.line_items) {
+    const productId = String(item.product_id);
+    const boxes = await Boxcollection.find({
+      'selectedItems.productSelection.id': productId,
+      shop_name: shop_name,
+    });
+
+    for (const box of boxes) {
+      const newQuantity = box.quantity + item.quantity; // Adding the quantity back
+
+      if (box.quantity !== newQuantity) {
+        box.quantity = newQuantity;
+        await box.save();
+
+        await historyLogSave(
+          box._id,
+          orderData.id,
+          orderData.name,
+          box.boxName,
+          item.name,
+          item.quantity,
+          shopDomain,
+          accessToken,
+          'cancelled' // Log as 'cancelled'
+        );
+      }
+    }
+  }
+};
 
 async function historyLogSave(
   boxID,
