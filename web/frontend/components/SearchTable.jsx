@@ -11,7 +11,7 @@ import {
   ChoiceList,
   ButtonGroup,
 } from '@shopify/polaris';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { DeleteIcon, EditIcon } from '@shopify/polaris-icons';
 
 export function SearchTable({ boxdata, delete: deleteBox, edit: editBox }) {
@@ -75,10 +75,11 @@ export function SearchTable({ boxdata, delete: deleteBox, edit: editBox }) {
     }
   });
 
-  const filteredOrders = sortedOrders.filter(({ boxName, packagingtype }) => {
+  const filteredOrders = sortedOrders.filter(({ boxName, packagingtype, subtype }) => {
     const queryMatch = boxName.toLowerCase().includes(queryValue.toLowerCase());
     const packagingTypeMatch = packagingType.length === 0 || packagingType.includes(packagingtype.toLowerCase());
-    return queryMatch && packagingTypeMatch;
+    const SubTypeMatch = packagingType.length === 0 || packagingType.includes(subtype.toLowerCase());
+    return queryMatch && (packagingTypeMatch || SubTypeMatch);
   });
 
   const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -164,6 +165,20 @@ export function SearchTable({ boxdata, delete: deleteBox, edit: editBox }) {
     },
   );
 
+  const PackagingType = [];
+  const SubType = [];
+  let Types = [];
+
+  // Populate PackagingType and SubType arrays
+  boxdata.forEach(({ packagingtype, subtype }) => {
+    PackagingType.push(packagingtype);
+    SubType.push(subtype);
+  });
+
+  // Merge arrays and remove duplicates
+  Types = [...new Set([...PackagingType, ...SubType])];
+
+  // Filters configuration
   const filters = [
     {
       key: 'packagingtype',
@@ -172,10 +187,7 @@ export function SearchTable({ boxdata, delete: deleteBox, edit: editBox }) {
         <ChoiceList
           title="Packaging Type"
           titleHidden
-          choices={[
-            { label: 'Bag', value: 'bag' },
-            { label: 'Box', value: 'box' },
-          ]}
+          choices={Types.map((type) => ({ label: type, value: type.toLowerCase() }))}
           selected={packagingType || []}
           onChange={handlePackagingTypeChange}
           allowMultiple

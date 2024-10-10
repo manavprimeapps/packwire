@@ -27,6 +27,11 @@ const app = express();
 
 const PORT = parseInt(process.env.BACKEND_PORT || process.env.PORT || '3000', 10); // Default to 3000
 
+// Start the server on the specified port
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
 const STATIC_PATH =
   process.env.NODE_ENV === 'production' ? `${process.cwd()}/frontend/dist` : `${process.cwd()}/frontend/`;
 
@@ -42,11 +47,6 @@ app.post(shopify.config.webhooks.path, shopify.processWebhooks({ webhookHandlers
 // also add a proxy rule for them in web/frontend/vite.config.js
 
 app.use('/api/*', shopify.validateAuthenticatedSession());
-
-// Start the server on the specified port
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
 
 /**
  * metafield create for all product
@@ -392,7 +392,9 @@ app.post('/webhook/orders/create', async (req, res) => {
   }
 });
 
-// Helper function to process matched box data
+/**
+ * Helper function to process matched box data
+ */
 const processMatchedBox = async (boxData, orderData, shopDomain, shop_name, accessToken) => {
   const boxDetails = await Boxcollection.findOne({
     _id: boxData.box,
@@ -431,7 +433,9 @@ const processMatchedBox = async (boxData, orderData, shopDomain, shop_name, acce
   }
 };
 
-// Helper function to process unmatched boxes
+/**
+ * Helper function to process unmatched boxes
+ */
 const processUnmatchedBoxes = async (orderData, shop_name, shopDomain, accessToken) => {
   for (const item of orderData.line_items) {
     const productId = String(item.product_id);
