@@ -63,111 +63,6 @@ app.post('/api/metafield/createGQL', async (_req, res) => {
   }
 });
 
-// async function createMetaField(session) {
-//   try {
-//     const client = new shopify.api.clients.Graphql({ session });
-
-//     // Metafield definitions to be created
-//     const metafieldDefinitions = [
-//       {
-//         name: 'packwire box name',
-//         namespace: 'packwire',
-//         key: 'packwire_box_name',
-//         type: 'single_line_text_field',
-//         description: 'This is the app metafield for products',
-//         ownerType: 'PRODUCT',
-//         pin: true,
-//       },
-//       {
-//         name: 'packwire box name',
-//         namespace: 'packwire',
-//         key: 'packwire_box_name',
-//         type: 'multi_line_text_field',
-//         description: 'This is the app metafield for products',
-//         ownerType: 'ORDER',
-//         pin: true,
-//       },
-//     ];
-
-//     // Check if the metafield definitions already exist for the PRODUCT owner type
-//     const queries = metafieldDefinitions.map((definition) => {
-//       return client.query({
-//         data: {
-//           query: `
-//             query {
-//               metafieldDefinitions(first: 250, namespace: "packwire", ownerType: ${definition.ownerType}) {
-//                 edges {
-//                   node {
-//                     key
-//                   }
-//                 }
-//               }
-//             }
-//           `,
-//         },
-//       });
-//     });
-
-//     const existingMetafieldsResponses = await Promise.all(queries);
-
-//     // Extract existing keys for both PRODUCT and ORDER metafields
-//     const existingKeys = existingMetafieldsResponses.reduce((keys, response, index) => {
-//       // Ensure the response contains data
-//       // @ts-ignore
-//       const existingMetafieldsData = response.body?.data?.metafieldDefinitions;
-//       if (existingMetafieldsData) {
-//         const newKeys = existingMetafieldsData.edges.map((edge) => edge.node.key);
-//         keys[metafieldDefinitions[index].ownerType] = newKeys;
-//       } else {
-//         throw new Error(`Failed to fetch existing metafields for ${metafieldDefinitions[index].ownerType}`);
-//       }
-//       return keys;
-//     }, {});
-
-//     // Filter metafield definitions that don't already exist
-//     const metafieldsToCreate = metafieldDefinitions.filter(
-//       (definition) => !existingKeys[definition.ownerType].includes(definition.key)
-//     );
-
-//     // Create metafield definitions only if they don't already exist
-//     if (metafieldsToCreate.length > 0) {
-//       const results = await Promise.all(
-//         metafieldsToCreate.map((definition) =>
-//           client.query({
-//             data: {
-//               query: `mutation CreateMetafieldDefinition($definition: MetafieldDefinitionInput!) {
-//                 metafieldDefinitionCreate(definition: $definition) {
-//                   createdDefinition {
-//                     id
-//                     name
-//                   }
-//                   userErrors {
-//                     field
-//                     message
-//                     code
-//                   }
-//                 }
-//               }`,
-//               variables: {
-//                 definition,
-//               },
-//             },
-//           })
-//         )
-//       );
-
-//       console.log('Metafield creation results:', results);
-//       return { message: 'Metafields created successfully', results };
-//     } else {
-//       console.log('Metafields already exist, no need to create them.');
-//       return { message: 'Metafields already exist, no need to create them.' };
-//     }
-//   } catch (error) {
-//     console.error('Error creating metafield definitions:', error);
-//     throw error;
-//   }
-// }
-
 async function createMetaField(session, timeout = 10000) {
   // Default timeout 10 seconds
   try {
@@ -335,7 +230,7 @@ app.get('/api/store/info', async (req, res) => {
 app.post('/api/hook/install', async (req, res) => {
   const shop = res.locals.shopify.session.shop;
   const accessToken = res.locals.shopify.session.accessToken;
-  const webhookUrl = 'https://8fbb-115-246-18-178.ngrok-free.app';
+  const webhookUrl = 'https://6605-115-246-18-178.ngrok-free.app';
 
   console.log('Attempting to register webhook with URL:', webhookUrl);
 
@@ -471,7 +366,7 @@ app.post('/webhook/orders/create', async (req, res) => {
     const { shop_accessToken: accessToken, shop_name } = storeInfo;
 
     // Fetch matching box data
-    const boxData = await getBoxNameBy(orderData.line_items);
+    const boxData = await getBoxNameBy(orderData.line_items, shop_name);
 
     if (boxData && boxData.box) {
       // Handle matched box data
@@ -572,11 +467,10 @@ const processUnmatchedBoxes = async (orderData, shop_name, shopDomain, accessTok
   }
 };
 
-const getBoxNameBy = async (lineItems) => {
+const getBoxNameBy = async (lineItems, shop_name) => {
   try {
     // Fetch condition data from the database (adjust query based on your schema)
-    const conditionData = await Conditioncollection.findOne({}, { condition: 1, _id: 0 }).exec();
-
+    const conditionData = await Conditioncollection.findOne({ shop_name: shop_name }).exec();
     if (conditionData && conditionData.condition) {
       // Iterate over each condition in the database
       for (const condition of conditionData.condition) {
@@ -764,88 +658,8 @@ async function checkAndSendLowStockAlert(box, shopDomain) {
 /**
  * App Webhook for orders-cancel
  */
-// app.post('/webhook/orders/cancel', async (req, res) => {
-//   try {
-//     const orderData = req.body;
-//     const shopDomain = req.headers['x-shopify-shop-domain'];
-//     const webhookId = req.headers['x-shopify-webhook-id']; // Get the webhook ID
-
-//     if (!webhookId) {
-//       console.log('Shopify webhook ID not found in request headers');
-//       return res.status(400).send('Bad request');
-//     }
-
-//     // Check if this webhook has already been processed
-//     if (processedWebhooks.has(webhookId)) {
-//       console.log('Duplicate webhook detected, skipping processing');
-//       return res.status(200).send('Webhook already processed');
-//     }
-//     // Add the webhook ID to the set to mark it as processed
-//     processedWebhooks.add(webhookId);
-
-//     if (!shopDomain) {
-//       console.log('Shopify shop domain not found in request headers');
-//     } else {
-//       console.log('Shopify shop domain:', shopDomain);
-//     }
-
-//     // Retrieve the shop session or access token from your database
-//     const storeInfo = await storeinformation.findOne({ shop_name: shopDomain }).exec();
-//     if (!storeInfo || !storeInfo.shop_accessToken) {
-//       console.log('No access token found for shop:', shopDomain);
-//       return res.status(400).send('Access token not found');
-//     }
-//     const accessToken = storeInfo.shop_accessToken;
-//     const shop_name = storeInfo.shop_name;
-
-//     // Loop through each line item in the order
-//     for (const item of orderData.line_items) {
-//       const productId = String(item.product_id);
-//       // Fetch box data where the product ID matches selectedItems.productSelection
-//       const boxes = await Boxcollection.find({
-//         'selectedItems.productSelection.id': productId,
-//         shop_name: shop_name,
-//       });
-
-//       // Update and save each matching box
-//       // for (const box of boxes) {
-//       //   // @ts-ignore
-//       //   const newQuantity = Math.max(box.quantity + item.quantity, 0);
-//       //   // @ts-ignore
-//       //   if (box.quantity !== newQuantity) {
-//       //     // @ts-ignore
-//       //     box.quantity = newQuantity;
-//       //     await box.save();
-
-//       //     await historyLogSave(
-//       //       box._id,
-//       //       orderData.id,
-//       //       orderData.name,
-//       //       box.boxName,
-//       //       item.name,
-//       //       item.quantity,
-//       //       shopDomain,
-//       //       accessToken,
-//       //       'cancel'
-//       //     );
-//       //     console.log(`Updated Box Quantity for Product ID ${item.product_id}: ${box.quantity}`);
-//       //     const LowStock = 30;
-//       //     if (box.quantity < LowStock) {
-//       //       console.log(`Box Quantity Low Stock : ${box.boxName}`);
-//       //     }
-//       //   }
-//       // }
-//     }
-//     return res.status(200).send('Order processed successfully');
-//   } catch (error) {
-//     console.error('Error processing webhook:', error.message);
-//     if (!res.headersSent) {
-//       return res.status(500).send('Error processing webhook');
-//     }
-//   }
-// });
 app.post('/webhook/orders/cancel', async (req, res) => {
-  try { 
+  try {
     const orderData = req.body;
     const shopDomain = req.headers['x-shopify-shop-domain'];
     const webhookId = req.headers['x-shopify-webhook-id'];
@@ -874,8 +688,8 @@ app.post('/webhook/orders/cancel', async (req, res) => {
     const { shop_accessToken: accessToken, shop_name } = storeInfo;
 
     // Fetch matching box data
-    const boxData = await getBoxNameBy(orderData.line_items);
-
+    const boxData = await getBoxNameBy(orderData.line_items, shop_name);
+    console.log(boxData);
     if (boxData && boxData.box) {
       // Process matched box data
       await processCancelledMatchedBox(boxData, orderData, shopDomain, shop_name, accessToken);
@@ -1113,7 +927,6 @@ app.post('/api/boxcollection/submited', async (req, res) => {
     } else {
       response = await Boxcollection.create(data);
     }
-    console.log(productSelection);
     // Loop through selected products and update their metafields
     for (const productId of productSelection) {
       await updateProductMetafield(session, productId.id, 'packwire_box_name', 'packwire', data.boxName);
@@ -1445,7 +1258,7 @@ app.post('/api/Historicaldata/all', async (req, res) => {
     // Query to fetch 'cancel' orders
     const canquery = {
       shop_name: res.locals.shopify.session.shop,
-      order_status: 'cancel',
+      order_status: 'cancelled',
     };
 
     // Apply date range filter if provided
@@ -1486,11 +1299,20 @@ app.post('/api/Historicaldata/all', async (req, res) => {
     });
 
     // Convert boxUsage object to an array for easier manipulation
-    const boxUsageArray = Object.keys(boxUsage).map((boxId) => ({
-      box_ID: boxId,
-      box_name: boxUsage[boxId].name,
-      totalQuantity: boxUsage[boxId].totalQuantity,
-    }));
+    const boxUsageArray = await Promise.all(
+      Object.keys(boxUsage).map(async (boxId) => {
+        // Fetch the current box quantity from the database
+        const boxData = await Boxcollection.findOne({ _id: boxId }).exec();
+
+        // Ensure that boxData exists and return the desired object
+        return {
+          box_ID: boxId,
+          box_name: boxUsage[boxId].name, // Name from boxUsage
+          totalQuantity: boxUsage[boxId].totalQuantity, // Total quantity from boxUsage
+          currentQuantity: boxData?.quantity || 0, // Fetched current box quantity, default to 0 if not found
+        };
+      })
+    );
 
     // Find the box with the highest quantity
     let mostUsedBox = { name: null, totalQuantity: 0 };

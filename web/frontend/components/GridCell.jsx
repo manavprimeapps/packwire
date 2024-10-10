@@ -9,6 +9,7 @@ export function GridCell({
   UseBoxGridCell,
   MostuseGridCell,
   useboxdata,
+  currentQuantity,
 }) {
   return (
     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3 }}>
@@ -18,7 +19,7 @@ export function GridCell({
           {CancelOrderGridCell && ordercount}
           {UseBoxGridCell && ordercount}
           {MostuseGridCell && ordercount}
-          {useboxdata && ordercount}
+          {useboxdata && currentQuantity + ordercount + (ordercount !== 0 ? ' / ' + ordercount : '')}
         </p>
       </LegacyCard>
     </Grid.Cell>

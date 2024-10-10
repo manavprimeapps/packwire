@@ -15,7 +15,7 @@ const selectedItemsSchema = new mongoose.Schema({
   productSelection: [
     {
       id: { type: String, required: true }, // Assuming 'id' is a string (e.g., product ID)
-      sku: { type: String, required: true }, // Assuming 'sku' is a string
+      sku: { type: String }, // Assuming 'sku' is a string
     },
   ],
   collectionSelection: [{ type: Array }],

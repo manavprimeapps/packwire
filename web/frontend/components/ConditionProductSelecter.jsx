@@ -28,13 +28,14 @@ export function ConditionProductSelecter({ formData, setFormData, pickerType, re
 
     picker.subscribe(ResourcePicker.Action.SELECT, (resources) => {
       // Map through the selection and handle products or variants
-
-      const selectedItems = resources.selection.map((item) => ({
-        id: item.id.split('/').pop(),
-        title: item.title,
-        Img_Src: item.images?.[0]?.originalSrc, // Extract product or collection ID
-        sku: item?.variants?.[0]?.sku || null, // Handle products with variants
-      }));
+      const selectedItems = resources.selection.map((item) => {
+        const sku = item?.variants?.[0]?.sku != null ? item.variants[0].sku : null;
+        return {
+          id: item.id.split('/').pop(), // Extract product or collection ID
+          title: item.title,
+          Img_Src: item.images?.[0]?.originalSrc || null, // Safely extract image source
+        };
+      });
 
       // Update the formData for the selected items
       handleSelection(selectedItems);

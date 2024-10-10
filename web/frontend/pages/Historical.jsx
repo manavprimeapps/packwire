@@ -59,7 +59,12 @@ function Historical() {
         <div className="use-box-data-grid">
           <Grid>
             {useboxdata.map((item) => (
-              <GridCell ordercount={item.totalQuantity} title={item.box_name} useboxdata />
+              <GridCell
+                ordercount={item.totalQuantity}
+                title={item.box_name}
+                currentQuantity={item.currentQuantity}
+                useboxdata
+              />
             ))}
           </Grid>
         </div>

@@ -19,7 +19,9 @@ export function BoxConditionSettings({ boxcollectionsData, ConditionsData, fetch
 
   // Fetch conditions data on component load
   useEffect(() => {
-    setConditions(ConditionsData);
+    if (ConditionsData && ConditionsData.length > 0) {
+      setConditions(ConditionsData);
+    }
   }, [ConditionsData]);
 
   // Submit form data, syncing conditions into formData
