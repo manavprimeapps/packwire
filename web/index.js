@@ -25,7 +25,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-const PORT = parseInt(process.env.BACKEND_PORT || process.env.PORT || '3000', 10); // Default to 3000
+// const PORT = parseInt(process.env.BACKEND_PORT || process.env.PORT || '3000', 10); // Default to 3000
+
+const PORT = process.env.BACKEND_PORT || 8000; // Set your static backend port
 
 // Start the server on the specified port
 app.listen(PORT, () => {
